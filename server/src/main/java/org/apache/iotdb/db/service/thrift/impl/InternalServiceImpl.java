@@ -26,6 +26,7 @@ import org.apache.iotdb.common.rpc.thrift.TFlushReq;
 import org.apache.iotdb.common.rpc.thrift.THeartbeatReq;
 import org.apache.iotdb.common.rpc.thrift.THeartbeatResp;
 import org.apache.iotdb.common.rpc.thrift.TRegionReplicaSet;
+import org.apache.iotdb.common.rpc.thrift.TRegionStatus;
 import org.apache.iotdb.common.rpc.thrift.TSStatus;
 import org.apache.iotdb.commons.conf.IoTDBConstant;
 import org.apache.iotdb.commons.consensus.ConsensusGroupId;
@@ -307,7 +308,7 @@ public class InternalServiceImpl implements InternalService.Iface {
 
   @Override
   public THeartbeatResp getHeartBeat(THeartbeatReq req) throws TException {
-    THeartbeatResp resp = new THeartbeatResp(req.getHeartbeatTimestamp(), getJudgedLeaders());
+    THeartbeatResp resp = new THeartbeatResp(req.getHeartbeatTimestamp(), getRegionStatus());
     Random whetherToGetMetric = new Random();
     if (MetricConfigDescriptor.getInstance().getMetricConfig().getEnableMetric()
         && whetherToGetMetric.nextDouble() < loadBalanceThreshold) {
@@ -329,15 +330,15 @@ public class InternalServiceImpl implements InternalService.Iface {
     return resp;
   }
 
-  private Map<TConsensusGroupId, Boolean> getJudgedLeaders() {
-    Map<TConsensusGroupId, Boolean> result = new HashMap<>();
+  private Map<TConsensusGroupId, TRegionStatus> getRegionStatus() {
+    Map<TConsensusGroupId, TRegionStatus> result = new HashMap<>();
     DataRegionConsensusImpl.getInstance()
         .getAllConsensusGroupIds()
         .forEach(
             groupId -> {
               result.put(
                   groupId.convertToTConsensusGroupId(),
-                  DataRegionConsensusImpl.getInstance().isLeader(groupId));
+                  new TRegionStatus(DataRegionConsensusImpl.getInstance().isLeader(groupId)));
             });
     SchemaRegionConsensusImpl.getInstance()
         .getAllConsensusGroupIds()
@@ -345,7 +346,7 @@ public class InternalServiceImpl implements InternalService.Iface {
             groupId -> {
               result.put(
                   groupId.convertToTConsensusGroupId(),
-                  SchemaRegionConsensusImpl.getInstance().isLeader(groupId));
+                  new TRegionStatus(SchemaRegionConsensusImpl.getInstance().isLeader(groupId)));
             });
     return result;
   }

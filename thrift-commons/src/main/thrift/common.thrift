@@ -81,9 +81,13 @@ struct THeartbeatReq {
   1: required i64 heartbeatTimestamp
 }
 
+struct TRegionStatus {
+  1: required bool isLeader
+}
+
 struct THeartbeatResp {
   1: required i64 heartbeatTimestamp
-  2: required map<TConsensusGroupId, bool> judgedLeaders
+  2: required map<TConsensusGroupId, TRegionStatus> regionStatus
   3: optional i16 cpu
   4: optional i16 memory
 }
